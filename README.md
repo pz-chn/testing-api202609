@@ -16,6 +16,9 @@
 
 > 這個 api 專案是 `crawler` 專案的「下游」：crawler 把資料寫進 MySQL，api 再把資料拿出來給人查。兩個專案合起來才是完整的一條資料管線。
 
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/94ef7261-4744-4cd1-9fb5-88b81b5439b6" />
+
+
 ## 為什麼要做成 API？
 
 初學者可能會想：「我直接連 MySQL 撈資料不就好了嗎？」
