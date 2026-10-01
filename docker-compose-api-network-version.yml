@@ -11,6 +11,8 @@ services:
     restart: always  # 若容器停止或崩潰，自動重新啟動
     environment:
       - TZ=Asia/Taipei  # 設定時區為台北（UTC+8）
+    env_file:
+      - .env.line  # 啟動時從本機讀入 LINE 金鑰
     networks:
       - my_network  # 將此服務連接到 my_network 網路
 
