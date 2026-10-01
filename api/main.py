@@ -12,7 +12,7 @@ from api.config import MYSQL_ACCOUNT, MYSQL_HOST, MYSQL_PASSWORD, MYSQL_PORT
 def get_mysql_financialdata_conn() -> engine.base.Connection:
     # 組成資料庫連線字串，格式：mysql+pymysql://帳號:密碼@host:port/資料庫名
     # mysql+pymysql 表示用 SQLAlchemy 介面 + PyMySQL 當底層 driver
-    address = f"mysql+pymysql://{MYSQL_ACCOUNT}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/mydb"
+    address = f"mysql+pymysql://{MYSQL_ACCOUNT}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/test_mygopen"
     engine = create_engine(address)  # 建立 SQLAlchemy 引擎（管理連線池）
     connect = engine.connect()  # 從引擎拿一條實際的連線
     return connect  # 回傳連線物件，外面就能拿來執行 SQL
@@ -36,20 +36,17 @@ def read_root():
 # 函式參數會自動對應到 URL 的 query string
 # 例如 /taiwan_stock_price?stock_id=2330&start_date=2024-01-01
 # stock_id="" 表示沒帶就預設空字串
-@app.get("/taiwan_stock_price")
-def taiwan_stock_price(
-    stock_id: str = "",  # 股票代號（可透過 URL query string 傳入）
-    start_date: str = "",  # 查詢起始日期（格式：YYYY-MM-DD）
-    end_date: str = "",  # 查詢結束日期（格式：YYYY-MM-DD）
+@app.get("/test_mygopen")
+def test_mygopen(
+    dscp: str = "",  # 股票代號（可透過 URL query string 傳入）
 ):
     # 根據參數組成 SQL 查詢語句
     # 注意：這裡用 f-string 直接拼接是為了教學易讀
     # 正式環境要改用 parameterized query 防止 SQL injection
     sql = f"""
-    select * from taiwan_stock_price
-    where StockID = '{stock_id}'
-    and Date>= '{start_date}'
-    and Date<= '{end_date}'
+    select * from mygopen_articles
+    where published LIKE '%%{dscp}%%'
+    or content_text LIKE '%%{dscp}%%'
     """
     # 建立資料庫連線
     mysql_conn = get_mysql_financialdata_conn()
