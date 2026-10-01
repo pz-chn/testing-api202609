@@ -10,3 +10,6 @@ MYSQL_HOST = os.environ.get("MYSQL_HOST", "127.0.0.1")
 MYSQL_PORT = int(os.environ.get("MYSQL_PORT", 3306))
 MYSQL_ACCOUNT = os.environ.get("MYSQL_ACCOUNT", "root")
 MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "ppWgnb_mfGe2m_")
+
+LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET", "")
+LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")

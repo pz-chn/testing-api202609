@@ -1,10 +1,27 @@
 # 匯入相關套件
 import pandas as pd  # 用來處理資料表，把 SQL 查詢結果轉成 DataFrame
-from fastapi import FastAPI  # FastAPI 主類別，建立 Web 應用實例
-from sqlalchemy import create_engine, engine  # 建立 DB 連線與引擎
+from fastapi import FastAPI, HTTPException, Request  # 加了 HTTPException, Request
+from linebot.v3 import WebhookParser
+from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.messaging import (
+    ApiClient,
+    Configuration,
+    MessagingApi,
+    ReplyMessageRequest,
+    TextMessage,
+)
+from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from sqlalchemy import create_engine, engine, text  # 建立 DB 連線與引擎
 
 # 匯入自定義的資料庫連線設定（從 config.py 來，最終源頭是 .env）
-from api.config import MYSQL_ACCOUNT, MYSQL_HOST, MYSQL_PASSWORD, MYSQL_PORT
+from api.config import (
+    LINE_CHANNEL_ACCESS_TOKEN,
+    LINE_CHANNEL_SECRET,
+    MYSQL_ACCOUNT,
+    MYSQL_HOST,
+    MYSQL_PASSWORD,
+    MYSQL_PORT,
+)
 
 
 # 建立連接到 MySQL 資料庫的函式，回傳一個 SQLAlchemy 的連線物件
@@ -57,3 +74,60 @@ def test_mygopen(
     # records 模式會產出 [{欄位:值, ...}, {欄位:值, ...}] 這種前端最愛吃的結構
     data_dict = data_df.to_dict("records")
     return {"data": data_dict}  # 回傳資料結果（FastAPI 自動序列化成 JSON）
+
+
+def search_articles(keyword: str, limit: int = 5):
+    # 用 :kw 這種參數寫法，% 放在參數值裡，不會再被格式化一次
+    sql = text("""
+        select title, published, url from mygopen_articles
+        where title like :kw or content_text like :kw
+        order by id desc
+        limit :limit
+    """)
+    mysql_conn = get_mysql_financialdata_conn()
+    try:
+        rows = mysql_conn.execute(
+            sql, {"kw": f"%{keyword}%", "limit": limit}
+        ).fetchall()
+    finally:
+        mysql_conn.close()
+    return rows
+
+
+def build_reply(keyword: str) -> str:
+    rows = search_articles(keyword)
+    if not rows:
+        return f"找不到和「{keyword}」相關的文章"
+    items = []
+    for i, r in enumerate(rows, 1):
+        items.append(f"{i}. {r.title or '（無標題）'}\n發布：{r.published}\n{r.url}")
+    header = f"找到和「{keyword}」相關的文章（最新 {len(rows)} 篇）："
+    return (header + "\n\n" + "\n\n".join(items))[:4900]
+
+
+line_config = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
+line_parser = WebhookParser(LINE_CHANNEL_SECRET)
+
+
+@app.post("/callback")
+async def callback(request: Request):
+    signature = request.headers.get("X-Line-Signature", "")
+    body = (await request.body()).decode("utf-8")
+    try:
+        events = line_parser.parse(body, signature)
+    except InvalidSignatureError:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+
+    with ApiClient(line_config) as api_client:
+        line_api = MessagingApi(api_client)
+        for event in events:
+            if isinstance(event, MessageEvent) and isinstance(
+                event.message, TextMessageContent
+            ):
+                line_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=build_reply(event.message.text.strip()))],
+                    )
+                )
+    return "OK"
