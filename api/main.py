@@ -57,19 +57,26 @@ def read_root():
 def test_mygopen(
     dscp: str = "",  # 股票代號（可透過 URL query string 傳入）
 ):
-    # 根據參數組成 SQL 查詢語句
-    # 注意：這裡用 f-string 直接拼接是為了教學易讀
-    # 正式環境要改用 parameterized query 防止 SQL injection
-    sql = f"""
-    select * from mygopen_articles
-    where published LIKE '%%{dscp}%%'
-    or content_text LIKE '%%{dscp}%%'
-    """
+    # 分類已改存在 article_categories，用 group_concat 併回原本的逗號字串格式
+    sql = text("""
+    select
+        a.id,
+        a.title,
+        a.verdict,
+        a.published,
+        a.url,
+        a.content_text,
+        group_concat(c.category order by c.category separator ', ') as categories
+    from mygopen_articles a
+    left join article_categories c on c.article_id = a.id
+    where a.published like :kw or a.content_text like :kw
+    group by a.id
+    """)
     # 建立資料庫連線
     mysql_conn = get_mysql_financialdata_conn()
     # 使用 Pandas 執行 SQL 查詢並取得資料
     # pd.read_sql 一行就把查詢結果包成 DataFrame，省下手動 cursor.fetchall + 轉欄位
-    data_df = pd.read_sql(sql, con=mysql_conn)
+    data_df = pd.read_sql(sql, con=mysql_conn, params={"kw": f"%{dscp}%"})
     # 將 DataFrame 轉為 List of Dict 格式，方便 FastAPI 回傳 JSON
     # records 模式會產出 [{欄位:值, ...}, {欄位:值, ...}] 這種前端最愛吃的結構
     data_dict = data_df.to_dict("records")
