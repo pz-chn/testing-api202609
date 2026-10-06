@@ -18,6 +18,7 @@ from api.config import (
     LINE_CHANNEL_ACCESS_TOKEN,
     LINE_CHANNEL_SECRET,
     MYSQL_ACCOUNT,
+    MYSQL_DATABASE,
     MYSQL_HOST,
     MYSQL_PASSWORD,
     MYSQL_PORT,
@@ -29,7 +30,7 @@ from api.config import (
 def get_mysql_financialdata_conn() -> engine.base.Connection:
     # 組成資料庫連線字串，格式：mysql+pymysql://帳號:密碼@host:port/資料庫名
     # mysql+pymysql 表示用 SQLAlchemy 介面 + PyMySQL 當底層 driver
-    address = f"mysql+pymysql://{MYSQL_ACCOUNT}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/test_mygopen"
+    address = f"mysql+pymysql://{MYSQL_ACCOUNT}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
     engine = create_engine(address)  # 建立 SQLAlchemy 引擎（管理連線池）
     connect = engine.connect()  # 從引擎拿一條實際的連線
     return connect  # 回傳連線物件，外面就能拿來執行 SQL
