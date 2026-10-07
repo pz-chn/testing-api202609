@@ -4,7 +4,7 @@ services:
   api:  # 定義一個服務，名稱為 api
     image: kikurage3133/test_mygopen_api:${DOCKER_IMAGE_VERSION}  # 使用的映像檔名稱與標籤（版本）
     hostname: "api"  # 設定 hostname = api
-    command: uv run --env-file=.env uvicorn api.main:app --reload --host 0.0.0.0 --port 8888
+    command: uv run uvicorn api.main:app --reload --host 0.0.0.0 --port 8888
     ports: 
       - 8889:8888
 
@@ -12,6 +12,7 @@ services:
     environment:
       - TZ=Asia/Taipei  # 設定時區為台北（UTC+8）
     env_file:
+      - .env.docker  # 啟動時從本機讀入 MySQL 等連線設定
       - .env.line  # 啟動時從本機讀入 LINE 金鑰
     networks:
       - my_network  # 將此服務連接到 my_network 網路

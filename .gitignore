@@ -10,3 +10,4 @@ build/.venv/
 .env.line
 
 .DS_Store
+.env.docker

@@ -21,7 +21,6 @@ COPY ./genenv.py /api
 COPY ./pyproject.toml /api
 COPY ./uv.lock /api
 COPY ./README.md /api
-COPY ./local.ini /api
 
 # # 設定容器的工作目錄為 /api，後續的指令都在這個目錄下執行
 WORKDIR /api/
@@ -32,9 +31,6 @@ RUN uv sync --frozen
 # # 設定語系環境變數，避免 Python 編碼問題
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
-
-# # 建立 .env
-RUN ENV=DOCKER uv run python genenv.py
 
 # # 啟動容器後，預設執行 bash（開啟終端）
 CMD ["/bin/bash"]
